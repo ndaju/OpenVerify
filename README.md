@@ -213,4 +213,3 @@ MIT License — see [LICENSE](LICENSE)
 ## Support
 
 - GitHub Issues: https://github.com/openverify/openverify/issues
-- Discord: [Join our server](https://discord.gg/openverify)
