@@ -1,0 +1,282 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  MODERATOR
+  USER
+}
+
+enum VaultVisibility {
+  PRIVATE
+  TEAM
+  ORGANIZATION
+  PUBLIC
+}
+
+enum AuditAction {
+  LOGIN
+  LOGOUT
+  CREATE_VAULT
+  READ_VAULT
+  UPDATE_VAULT
+  DELETE_VAULT
+  CREATE_CHANNEL
+  DELETE_CHANNEL
+  SEND_MESSAGE
+  DELETE_MESSAGE
+  UPDATE_ROLE
+  UPDATE_SETTINGS
+  OAUTH_CONNECT
+  OAUTH_DISCONNECT
+  BACKUP_CREATE
+  BACKUP_RESTORE
+  FAILED_LOGIN
+}
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  username       String    @unique
+  displayName    String?
+  passwordHash   String?
+  avatarUrl      String?
+  twoFactorSecret String?
+  twoFactorEnabled Boolean @default(false)
+  role           UserRole  @default(USER)
+  isVerified     Boolean   @default(false)
+  verificationToken String? @unique
+  resetToken     String?
+  resetTokenExpiresAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  discordAccounts DiscordAccount[]
+  vaults          Vault[]
+  ownedGuilds     Guild[]          @relation("GuildOwner")
+  memberships     GuildMember[]
+  messages        Message[]
+  sessions        Session[]
+  auditLogs       AuditLog[]
+
+  @@index([email])
+  @@index([username])
+  @@index([role])
+}
+
+model DiscordAccount {
+  id              String   @id @default(cuid())
+  discordId       String   @unique
+  accessToken     String
+  refreshToken    String?
+  tokenExpiresAt  DateTime?
+  discordUsername String
+  discordAvatar   String?
+  guildCount      Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([discordId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  refreshToken String   @unique
+  userAgent    String?
+  ipAddress    String?
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  lastUsedAt   DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([refreshToken])
+  @@index([expiresAt])
+}
+
+model Vault {
+  id          String          @id @default(cuid())
+  name        String
+  description String?
+  encryptedData String
+  encryptedFileMetadata String?
+  iv          String
+  authTag     String
+  visibility  VaultVisibility @default(PRIVATE)
+  isLocked    Boolean         @default(true)
+  accessCount Int             @default(0)
+  lastAccessedAt DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  ownerId String
+  owner   User   @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  allowedUsers VaultAccess[]
+
+  @@index([ownerId])
+  @@index([visibility])
+  @@index([name])
+}
+
+model VaultAccess {
+  id        String   @id @default(cuid())
+  canRead   Boolean  @default(true)
+  canWrite  Boolean  @default(false)
+  grantedAt DateTime @default(now())
+
+  vaultId String
+  vault   Vault  @relation(fields: [vaultId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([vaultId, userId])
+  @@index([userId])
+}
+
+model Guild {
+  id        String   @id @default(cuid())
+  discordId String   @unique
+  name      String
+  iconUrl   String?
+  memberCount Int    @default(0)
+  isBackedUp Boolean @default(false)
+  lastBackedUpAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  ownerId String
+  owner   User   @relation("GuildOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  channels Channel[]
+  members  GuildMember[]
+
+  @@index([discordId])
+  @@index([ownerId])
+}
+
+model GuildMember {
+  id        String   @id @default(cuid())
+  discordId String
+  nickname  String?
+  joinedAt  DateTime @default(now())
+
+  guildId String
+  guild   Guild  @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([guildId, discordId])
+  @@index([guildId])
+  @@index([userId])
+}
+
+model Channel {
+  id        String   @id @default(cuid())
+  discordId String   @unique
+  name      String
+  topic     String?
+  type      String   @default("text")
+  position  Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  guildId String
+  guild   Guild    @relation(fields: [guildId], references: [id], onDelete: Cascade)
+
+  messages Message[]
+
+  @@index([guildId])
+  @@index([discordId])
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  channelId String
+  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  parentId  String?
+  parent    Message? @relation("MessageReplies", fields: [parentId], references: [id], onDelete: SetNull)
+  replies   Message[] @relation("MessageReplies")
+
+  attachments Attachment[]
+  reactions   Reaction[]
+
+  @@index([channelId, createdAt])
+  @@index([authorId])
+}
+
+model Attachment {
+  id       String @id @default(cuid())
+  filename String
+  url      String
+  mimeType String
+  size     Int
+
+  messageId String
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([messageId])
+}
+
+model Reaction {
+  id        String   @id @default(cuid())
+  emoji     String
+  count     Int      @default(1)
+  createdAt DateTime @default(now())
+
+  messageId String
+  message   Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  userIds String[]
+
+  @@unique([messageId, emoji])
+  @@index([messageId])
+}
+
+model AuditLog {
+  id        String       @id @default(cuid())
+  action    AuditAction
+  details   String?
+  ipAddress String?
+  createdAt DateTime     @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([action])
+  @@index([createdAt])
+}
+
+model RateLimit {
+  id        String   @id @default(cuid())
+  key       String
+  points    Int      @default(0)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([key])
+  @@index([expiresAt])
+}
