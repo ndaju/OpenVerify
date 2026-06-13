@@ -1,5 +1,7 @@
 # OpenVerify
 
+[GitHub Repository](https://github.com/ndaju/OpenVerify)
+
 Open-source, self-hosted Discord verification and backup OAuth2 bot system. Built with Next.js 14, Express, TypeScript, and PostgreSQL.
 
 ## Features
