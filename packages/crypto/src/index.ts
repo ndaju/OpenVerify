@@ -2,11 +2,13 @@ import crypto from "node:crypto";
 
 const ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 16;
-const AUTH_TAG_LENGTH = 16;
 const KEY_LENGTH = 32;
 
 function deriveKey(secret: string): Buffer {
-  return crypto.scryptSync(secret, crypto.randomBytes(16).toString("hex"), KEY_LENGTH);
+  if (Buffer.from(secret, "hex").length === KEY_LENGTH) {
+    return Buffer.from(secret, "hex");
+  }
+  return crypto.scryptSync(secret, "openverify-salt", KEY_LENGTH);
 }
 
 export function encrypt(text: string, secret: string): { encrypted: string; iv: string; authTag: string } {

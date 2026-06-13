@@ -1,4 +1,8 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+import path from "path";
+
+const envPath = path.resolve(__dirname, "../../../../.env");
+dotenv.config({ path: envPath });
 
 function required(key: string): string {
   const value = process.env[key];

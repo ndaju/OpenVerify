@@ -38,6 +38,10 @@ enum AuditAction {
   BACKUP_CREATE
   BACKUP_RESTORE
   FAILED_LOGIN
+  VERIFY_USER
+  GRANT_ROLE
+  BOT_JOIN
+  BOT_LEAVE
 }
 
 model User {
@@ -254,6 +258,35 @@ model Reaction {
 
   @@unique([messageId, emoji])
   @@index([messageId])
+}
+
+model GuildConfig {
+  id                String   @id @default(cuid())
+  guildDiscordId    String   @unique
+  verifiedRoleId    String?
+  verificationChannelId String?
+  logChannelId      String?
+  welcomeMessage    String?  @default("Welcome {user}! Please verify your account by clicking the link below.")
+  isEnabled         Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([guildDiscordId])
+}
+
+model VerificationToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  discordId String
+  guildId   String
+  userId    String?
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([discordId])
+  @@index([guildId])
 }
 
 model AuditLog {
