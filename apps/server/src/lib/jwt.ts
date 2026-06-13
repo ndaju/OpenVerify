@@ -11,15 +11,28 @@ export interface RefreshTokenPayload {
   sessionId: string;
 }
 
+function parseExpiry(expiry: string): number {
+  const match = expiry.match(/^(\d+)([smhd])$/);
+  if (!match) return 900;
+  const num = parseInt(match[1], 10);
+  switch (match[2]) {
+    case "s": return num;
+    case "m": return num * 60;
+    case "h": return num * 3600;
+    case "d": return num * 86400;
+    default: return num;
+  }
+}
+
 export function signAccessToken(payload: AccessTokenPayload): string {
   return jwt.sign(payload, config.jwt.accessSecret, {
-    expiresIn: config.jwt.accessExpiry,
+    expiresIn: parseExpiry(config.jwt.accessExpiry),
   });
 }
 
 export function signRefreshToken(payload: RefreshTokenPayload): string {
   return jwt.sign(payload, config.jwt.refreshSecret, {
-    expiresIn: config.jwt.refreshExpiry,
+    expiresIn: parseExpiry(config.jwt.refreshExpiry),
   });
 }
 

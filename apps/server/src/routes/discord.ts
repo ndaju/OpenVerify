@@ -54,7 +54,7 @@ async function exchangeCode(code: string): Promise<DiscordTokenResponse> {
     throw new Error(`Discord token exchange failed: ${error}`);
   }
 
-  return res.json();
+  return res.json() as Promise<DiscordTokenResponse>;
 }
 
 async function refreshDiscordToken(refreshToken: string): Promise<DiscordTokenResponse> {
@@ -75,7 +75,7 @@ async function refreshDiscordToken(refreshToken: string): Promise<DiscordTokenRe
     throw new Error("Failed to refresh Discord token");
   }
 
-  return res.json();
+  return res.json() as Promise<DiscordTokenResponse>;
 }
 
 async function fetchDiscordUser(accessToken: string): Promise<DiscordUserResponse> {
@@ -87,7 +87,7 @@ async function fetchDiscordUser(accessToken: string): Promise<DiscordUserRespons
     throw new Error("Failed to fetch Discord user");
   }
 
-  return res.json();
+  return res.json() as Promise<DiscordUserResponse>;
 }
 
 async function fetchUserGuilds(accessToken: string): Promise<DiscordGuildResponse[]> {
@@ -99,7 +99,7 @@ async function fetchUserGuilds(accessToken: string): Promise<DiscordGuildRespons
     throw new Error("Failed to fetch user guilds");
   }
 
-  return res.json();
+  return res.json() as Promise<DiscordGuildResponse[]>;
 }
 
 router.get("/auth", (req: Request, res: Response) => {

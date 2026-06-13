@@ -59,6 +59,7 @@ model User {
 
   discordAccounts DiscordAccount[]
   vaults          Vault[]
+  vaultAccesses   VaultAccess[]
   ownedGuilds     Guild[]          @relation("GuildOwner")
   memberships     GuildMember[]
   messages        Message[]
@@ -91,7 +92,7 @@ model DiscordAccount {
 
 model Session {
   id           String   @id @default(cuid())
-  refreshToken String   @unique
+  refreshToken String?  @unique
   userAgent    String?
   ipAddress    String?
   expiresAt    DateTime
