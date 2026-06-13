@@ -212,4 +212,5 @@ MIT License — see [LICENSE](LICENSE)
 
 ## Support
 
-- GitHub Issues: https://github.com/OpenVerify/OpenVerify/issues
+- GitHub Issues: [OpenVerify/issues
+](https://github.com/ndaju/OpenVerify/issues)
